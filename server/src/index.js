@@ -9,8 +9,23 @@ dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT || 3303);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.set("trust proxy", 1);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed by CORS"));
+    }
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
